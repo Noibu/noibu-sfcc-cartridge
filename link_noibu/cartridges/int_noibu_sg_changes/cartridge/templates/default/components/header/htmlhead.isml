@@ -90,7 +90,7 @@ If you are not using the build cartridge the comments can be safely removed.
 </isif>
 
 <iscomment> custom Start: NOIBU changes </iscomment>
-<isprint value="${dw.system.HookMgr.callHook('app.template.htmlHead', 'htmlHead') || ''}" encoding="off" />
+<isprint value="${dw.system.HookMgr.callHook('noibu.template.htmlHead', 'htmlHead') || ''}" encoding="off" />
 <iscomment> custom End: NOIBU changes </iscomment>
 
 <iscomment>Gather device-aware scripts</iscomment>

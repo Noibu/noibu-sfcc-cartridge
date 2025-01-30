@@ -52,7 +52,7 @@ function getCookie() {
  * @returns {void} This function does not return a value.
  */
 function htmlHead() {
-    if ("isNoibuEnabled" in sitePreferences.current.preferences.custom && sitePreferences.current.preferences.custom.isNoibuEnabled) {
+    if ("noibuEnabled" in sitePreferences.current.preferences.custom && sitePreferences.current.preferences.custom.noibuEnabled) {
         return getCookie();
     }
     return '';

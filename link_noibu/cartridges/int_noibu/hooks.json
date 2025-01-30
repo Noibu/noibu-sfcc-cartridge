@@ -1,7 +1,7 @@
 {
     "hooks": [
         {
-            "name": "app.template.htmlHead",
+            "name": "noibu.template.htmlHead",
             "script": "./cartridge/scripts/hooks/htmlHead"
         }
     ]

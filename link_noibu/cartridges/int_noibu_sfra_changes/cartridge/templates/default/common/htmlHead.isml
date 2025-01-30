@@ -46,7 +46,7 @@
         do not include shopper specific information.
 </iscomment>
 <iscomment> custom Start: NOIBU changes </iscomment>
-<isprint value="${dw.system.HookMgr.callHook('app.template.htmlHead', 'htmlHead') || ''}" encoding="off" />
+<isprint value="${dw.system.HookMgr.callHook('noibu.template.htmlHead', 'htmlHead') || ''}" encoding="off" />
 <iscomment> custom End: NOIBU changes </iscomment>
 <iscomment>
     Module to overlay skinning css
