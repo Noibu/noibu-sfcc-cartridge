@@ -1,7 +1,5 @@
 <isset name="sitePreferences" value="${require('dw/system/Site').getCurrent().getPreferences().getCustom()}" scope="page" />
 <isif condition="${'noibuEnabled' in sitePreferences && sitePreferences.noibuEnabled}">
-    <isif condition="${'noibuCDNEnabled' in sitePreferences && sitePreferences.noibuCDNEnabled}">
-        <script src="${sitePreferences.noibuTrackingSDK}"></script>
-    </isif>
-    <script src="${URLUtils.staticURL('/js/noibu.js')}" data-noibu-session-id="${'noibuSessionTrackingEnabled' in sitePreferences && sitePreferences.noibuSessionTrackingEnabled ? pdict.dwsid : ''}"></script>
+    <script src="https://cdn.noibu.com/collect-core.js"></script>
+    <script src="${URLUtils.staticURL('/js/noibu.js')}" data-noibu-session-id="${pdict.dwsid}"></script>
 </isif>

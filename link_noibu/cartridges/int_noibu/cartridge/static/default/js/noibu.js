@@ -10786,20 +10786,11 @@ async function checkSDKExistanceAndAddCustomAttribute() {
 
     if (dwsid && dwsid.length > 0) {
         window.NOIBUJS.addCustomAttribute("sfcc-session-id", dwsid);
-        getSessionTrackingCode(false);
     }
 }
 
 checkSDKExistanceAndAddCustomAttribute();
-function getSessionTrackingCode(status) {
-    NOIBUJS.requestHelpCode(status)
-      .then(function (helpcode) {
-        console.log("Tracking Code:", helpcode);
-      })
-      .catch(function (error) {
-        console.error("Error:", error);
-      });
-  }
+
 })();
 
 /******/ })()
