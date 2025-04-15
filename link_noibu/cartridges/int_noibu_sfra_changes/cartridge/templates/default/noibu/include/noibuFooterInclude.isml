@@ -1,0 +1,33 @@
+<isset name="sitePreferences" value="${require('dw/system/Site').getCurrent().getPreferences().getCustom()}" scope="page" />
+<isif condition="${'noibuEnabled' in sitePreferences && sitePreferences.noibuEnabled}">
+    <script>
+        function addNoibuAttributes() {
+            if (!window.NOIBUJS) {
+                return;
+            }
+
+            // All available Noibu attributes from pdict
+            var noibuAttributes = {
+                "customer_id": '${pdict.noibuAccountInfo ? pdict.noibuAccountInfo.customer_id : ''}',
+                "customer_groups": '${pdict.noibuAccountInfo ? pdict.noibuAccountInfo.customer_groups : ''}',
+                "order_id": '${pdict.noibuOrder ? pdict.noibuOrder.order_id : ''}',
+                "order_token": '${pdict.noibuOrder ? pdict.noibuOrder.order_token : ''}',
+                "coupon_codes": '${pdict.noibuOrder ? pdict.noibuOrder.coupon_codes : ''}',
+                "promotions": '${pdict.noibuOrder ? pdict.noibuOrder.promotions : ''}',
+                "cart_id": '${pdict.noibuCart ? pdict.noibuCart.cart_id : ''}',
+            };
+
+            // Loop through all attributes and add them dynamically
+            Object.entries(noibuAttributes).forEach(([key, value]) => {
+                if (value && value !== 'null' && value !== 'undefined') {
+                    window.NOIBUJS.addCustomAttribute(key, value);
+                }
+            });
+        }
+        if (window.NOIBUJS) {
+            addNoibuAttributes();
+        } else {
+            window.addEventListener("noibuSDKReady", addNoibuAttributes);
+        }
+    </script>
+</isif>
