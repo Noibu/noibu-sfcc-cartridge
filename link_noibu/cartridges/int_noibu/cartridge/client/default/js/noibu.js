@@ -1,10 +1,5 @@
 "use strict";
 
-if (window && !window.$) {
-    // this check is for SG, in SG window.$ is already exist and throw error on reinitialize
-    window.$ = require("jquery");
-    window.jQuery = window.$;
-}
 /**
  * Checks if the NOIBUJS SDK is loaded and adds a custom attribute to the SDK.
  *
@@ -20,7 +15,8 @@ if (window && !window.$) {
  * @returns {Promise<void>} Resolves when the NOIBUJS SDK is ready and the custom attribute is added.
  */
 async function checkSDKExistanceAndAddCustomAttribute() {
-    var dwsid = $("script[data-noibu-session-id]").data("noibu-session-id");
+    const script = document.querySelector('script[data-noibu-session-id]');
+    const dwsid = script ? script.getAttribute('data-noibu-session-id') : undefined;
     if (!window.NOIBUJS && dwsid && dwsid.length > 0) {
         await new Promise((resolve) => {
             window.addEventListener("noibuSDKReady", resolve);
