@@ -28,4 +28,32 @@ async function checkSDKExistanceAndAddCustomAttribute() {
     }
 }
 
+async function monitorEcommerceEvents() {
+    localStorage.setItem('n_platform', '1'); // disable funnel step ecomm events
+
+    await new Promise(resolve => document.addEventListener("DOMContentLoaded", resolve));
+
+    if (typeof $ === "undefined") return;
+
+    $("body").on("product:afterAddToCart", (event, data) => {
+        const payload = data?.noibu_product_added_to_cart || null;
+        track("product_added_to_cart", payload);
+    });
+
+    $("body").on("cart:update", (event, data) => {
+        const payload = data?.noibu_product_removed_from_cart || null;
+        track("product_removed_from_cart", payload);
+    });
+}
+
+async function track(eventName, eventData) {
+    if (!window.NOIBUJS) {
+        await new Promise(resolve => window.addEventListener("noibuSDKReady", resolve));
+    }
+
+    const result = NOIBUJS.track(eventName, eventData);
+    console.log('NOIBUJS track:', eventName, result, eventData);
+}
+
 checkSDKExistanceAndAddCustomAttribute();
+monitorEcommerceEvents();

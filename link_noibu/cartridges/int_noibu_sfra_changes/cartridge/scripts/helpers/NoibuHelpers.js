@@ -72,4 +72,58 @@ module.exports = {
       noibuOrder: noibuOrder,
     };
   },
+
+  getCartLineForTracking: function (pli) {
+    var URLUtils = require("dw/web/URLUtils");
+
+    var product = pli.product;
+    if (!product) return null;
+
+    var masterProduct = product.isVariant()
+      ? product.variationModel.master
+      : product;
+
+    var images = product.getImages("small");
+    var image = images && images.length > 0 ? images[0] : null;
+
+    var unitPrice = pli.basePrice;
+    var totalPrice = pli.adjustedPrice;
+
+    return {
+      cartLine: {
+        cost: {
+          totalAmount: {
+            amount: totalPrice ? totalPrice.value : 0,
+            currencyCode: totalPrice ? totalPrice.currencyCode : "",
+          },
+        },
+        merchandise: {
+          id: pli.productID,
+          title: pli.productName,
+          sku: product.UPC || pli.productID,
+          price: {
+            amount: unitPrice ? unitPrice.value : 0,
+            currencyCode: unitPrice ? unitPrice.currencyCode : "",
+          },
+          image: image
+            ? {
+                src: image.absURL ? image.absURL.toString() : "",
+                alt: image.alt || "",
+              }
+            : null,
+          product: {
+            id: masterProduct.ID,
+            title: masterProduct.name,
+            type:
+              masterProduct.primaryCategory
+                ? masterProduct.primaryCategory.displayName
+                : "",
+            url: URLUtils.abs("Product-Show", "pid", masterProduct.ID).toString(),
+            vendor: masterProduct.brand || "",
+          },
+        },
+        quantity: pli.quantityValue,
+      },
+    };
+  },
 };
