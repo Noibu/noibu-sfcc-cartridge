@@ -30,4 +30,31 @@
             window.addEventListener("noibuSDKReady", addNoibuAttributes);
         }
     </script>
+    <isif condition="${pdict.noibu_cart_viewed || pdict.noibu_product_viewed || pdict.noibu_collection_viewed}">
+    <script>
+        (function () {
+            var events = [];
+            <isif condition="${pdict.noibu_cart_viewed}">
+            events.push(["cart_viewed", <isprint value="${JSON.stringify(pdict.noibu_cart_viewed)}" encoding="off" />]);
+            </isif>
+            <isif condition="${pdict.noibu_product_viewed}">
+            events.push(["product_viewed", <isprint value="${JSON.stringify(pdict.noibu_product_viewed)}" encoding="off" />]);
+            </isif>
+            <isif condition="${pdict.noibu_collection_viewed}">
+            events.push(["collection_viewed", <isprint value="${JSON.stringify(pdict.noibu_collection_viewed)}" encoding="off" />]);
+            </isif>
+            function trackAll() {
+                events.forEach(([name, payload]) => {
+                    const result = NOIBUJS.track(name, payload);
+                    console.log('NOIBUJS.track:', name, result, payload);
+                });
+            }
+            if (window.NOIBUJS) {
+                trackAll();
+            } else {
+                window.addEventListener("noibuSDKReady", trackAll);
+            }
+        })();
+    </script>
+    </isif>
 </isif>

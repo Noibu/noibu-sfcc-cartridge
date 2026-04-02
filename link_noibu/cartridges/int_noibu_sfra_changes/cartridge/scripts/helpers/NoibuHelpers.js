@@ -73,6 +73,68 @@ module.exports = {
     };
   },
 
+  getProductForTracking: function (pid) {
+    var ProductMgr = require("dw/catalog/ProductMgr");
+    var product = ProductMgr.getProduct(pid);
+    if (!product) return null;
+
+    return { productVariant: getProductVariantForTracking(product) };
+  },
+
+  getCollectionForTracking: function (productSearch) {
+    if (!productSearch || !productSearch.category) return null;
+
+    var ProductMgr = require("dw/catalog/ProductMgr");
+    var productVariants = [];
+    var productIds = productSearch.productIds;
+
+    for (var i = 0; i < productIds.length; i++) {
+      var product = ProductMgr.getProduct(productIds[i].productID);
+      if (product) {
+        productVariants.push(getProductVariantForTracking(product));
+      }
+    }
+
+    return {
+      collection: {
+        id: productSearch.category.id,
+        title: productSearch.category.name,
+        productVariants: productVariants,
+      },
+    };
+  },
+
+  getCartForTracking: function () {
+    var BasketMgr = require("dw/order/BasketMgr");
+    var basket = BasketMgr.getCurrentBasket();
+    if (!basket) return null;
+
+    var lines = [];
+    var productLineItems = basket.productLineItems;
+    for (var i = 0; i < productLineItems.length; i++) {
+      var cartLine = module.exports.getCartLineForTracking(productLineItems[i]);
+      if (cartLine) {
+        lines.push(cartLine.cartLine);
+      }
+    }
+
+    var total = basket.adjustedMerchandizeTotalPrice;
+
+    return {
+      cart: {
+        id: basket.UUID,
+        totalQuantity: basket.productQuantityTotal,
+        cost: {
+          totalAmount: {
+            amount: total ? total.value : 0,
+            currencyCode: total ? total.currencyCode : "",
+          },
+        },
+        lines: lines,
+      },
+    };
+  },
+
   getCartLineForTracking: function (pli) {
     var URLUtils = require("dw/web/URLUtils");
 
@@ -127,3 +189,48 @@ module.exports = {
     };
   },
 };
+
+/**
+ * Builds a Shopify-shaped productVariant payload from a raw SFCC product.
+ * Shared by getProductViewedForTracking and getCollectionViewedForTracking.
+ *
+ * @param {dw.catalog.Product} product
+ * @returns {Object} productVariant payload
+ */
+function getProductVariantForTracking(product) {
+  var URLUtils = require("dw/web/URLUtils");
+
+  var masterProduct = product.isVariant()
+    ? product.variationModel.master
+    : product;
+
+  var images = product.getImages("small");
+  var image = images && images.length > 0 ? images[0] : null;
+  var priceModel = product.getPriceModel();
+  var price = priceModel.getPrice();
+  if (!price.available) {
+    price = priceModel.getMinPrice();
+  }
+
+  return {
+    id: product.ID,
+    title: product.name,
+    sku: product.UPC || product.ID,
+    price: {
+      amount: price && price.available ? price.value : 0,
+      currencyCode: price && price.available ? price.currencyCode : "",
+    },
+    image: image
+      ? { src: image.absURL ? image.absURL.toString() : "" }
+      : null,
+    product: {
+      id: masterProduct.ID,
+      title: masterProduct.name,
+      type: masterProduct.primaryCategory
+        ? masterProduct.primaryCategory.displayName
+        : "",
+      vendor: masterProduct.brand || "",
+      url: URLUtils.abs("Product-Show", "pid", masterProduct.ID).toString(),
+    },
+  };
+}
