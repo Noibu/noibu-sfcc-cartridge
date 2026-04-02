@@ -30,7 +30,7 @@
             window.addEventListener("noibuSDKReady", addNoibuAttributes);
         }
     </script>
-    <isif condition="${pdict.noibu_cart_viewed || pdict.noibu_product_viewed || pdict.noibu_collection_viewed}">
+    <isif condition="${pdict.noibu_cart_viewed || pdict.noibu_product_viewed || pdict.noibu_collection_viewed || pdict.noibu_search_submitted}">
     <script>
         (function () {
             var events = [];
@@ -42,6 +42,9 @@
             </isif>
             <isif condition="${pdict.noibu_collection_viewed}">
             events.push(["collection_viewed", <isprint value="${JSON.stringify(pdict.noibu_collection_viewed)}" encoding="off" />]);
+            </isif>
+            <isif condition="${pdict.noibu_search_submitted}">
+            events.push(["search_submitted", <isprint value="${JSON.stringify(pdict.noibu_search_submitted)}" encoding="off" />]);
             </isif>
             function trackAll() {
                 events.forEach(([name, payload]) => {

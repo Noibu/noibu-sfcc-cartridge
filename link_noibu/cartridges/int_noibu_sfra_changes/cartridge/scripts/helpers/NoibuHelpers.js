@@ -104,6 +104,28 @@ module.exports = {
     };
   },
 
+  getSearchForTracking: function (productSearch, query) {
+    if (!query) return null;
+
+    var ProductMgr = require("dw/catalog/ProductMgr");
+    var productVariants = [];
+    var productIds = productSearch ? productSearch.productIds : [];
+
+    for (var i = 0; i < productIds.length; i++) {
+      var product = ProductMgr.getProduct(productIds[i].productID);
+      if (product) {
+        productVariants.push(getProductVariantForTracking(product));
+      }
+    }
+
+    return {
+      searchResult: {
+        query: query,
+        productVariants: productVariants,
+      },
+    };
+  },
+
   getCartForTracking: function () {
     var BasketMgr = require("dw/order/BasketMgr");
     var basket = BasketMgr.getCurrentBasket();
