@@ -30,10 +30,16 @@
             window.addEventListener("noibuSDKReady", addNoibuAttributes);
         }
     </script>
-    <isif condition="${pdict.noibu_cart_viewed || pdict.noibu_product_viewed || pdict.noibu_collection_viewed || pdict.noibu_search_submitted}">
+    <isif condition="${pdict.noibu_checkout_started || pdict.noibu_checkout_completed || pdict.noibu_cart_viewed || pdict.noibu_product_viewed || pdict.noibu_collection_viewed || pdict.noibu_search_submitted}">
     <script>
         (function () {
             var events = [];
+            <isif condition="${pdict.noibu_checkout_started}">
+            events.push(["checkout_started", <isprint value="${JSON.stringify(pdict.noibu_checkout_started)}" encoding="off" />]);
+            </isif>
+            <isif condition="${pdict.noibu_checkout_completed}">
+            events.push(["checkout_completed", <isprint value="${JSON.stringify(pdict.noibu_checkout_completed)}" encoding="off" />]);
+            </isif>
             <isif condition="${pdict.noibu_cart_viewed}">
             events.push(["cart_viewed", <isprint value="${JSON.stringify(pdict.noibu_cart_viewed)}" encoding="off" />]);
             </isif>

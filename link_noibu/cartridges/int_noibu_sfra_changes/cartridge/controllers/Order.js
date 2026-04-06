@@ -13,6 +13,11 @@ server.append("Confirm", function (req, res, next) {
     res.setViewData(NoibuHelpers.getCustomer(req.currentCustomer));
     res.setViewData(NoibuHelpers.getCart());
     res.setViewData(NoibuHelpers.getOrder(orderId, orderToken));
+
+    var checkoutCompleted = NoibuHelpers.getOrderCheckoutForTracking(orderId, orderToken);
+    if (checkoutCompleted) {
+      res.setViewData({ noibu_checkout_completed: checkoutCompleted });
+    }
   });
   next();
 });

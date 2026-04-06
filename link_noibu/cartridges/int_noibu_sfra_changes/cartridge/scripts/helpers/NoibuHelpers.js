@@ -157,6 +157,124 @@ module.exports = {
     };
   },
 
+  /**
+   * Builds a Shopify-shaped checkout payload from a SFCC LineItemCtnr
+   * (works for both Basket and Order since they share the same interface).
+   *
+   * @param {dw.order.LineItemCtnr} lineItemCtnr
+   * @param {string} token - basket UUID or order token
+   * @returns {Object|null}
+   */
+  getCheckoutForTracking: function (lineItemCtnr, token) {
+    var shipment = lineItemCtnr.defaultShipment;
+
+    var lineItems = [];
+    var productLineItems = lineItemCtnr.productLineItems;
+    for (var i = 0; i < productLineItems.length; i++) {
+      var cartLine = module.exports.getCartLineForTracking(productLineItems[i]);
+      if (!cartLine) continue;
+      lineItems.push({
+        quantity: cartLine.cartLine.quantity,
+        finalLinePrice: cartLine.cartLine.cost.totalAmount,
+        merchandise: cartLine.cartLine.merchandise,
+      });
+    }
+
+    var discountApplications = [];
+    var priceAdjustments = lineItemCtnr.getPriceAdjustments();
+    for (var j = 0; j < priceAdjustments.length; j++) {
+      var pa = priceAdjustments[j];
+      discountApplications.push({
+        title: pa.promotionID || "",
+        value: {
+          amount: pa.price ? Math.abs(pa.price.value) : 0,
+          currencyCode: pa.price ? pa.price.currencyCode : "",
+        },
+      });
+    }
+
+    var subtotal = lineItemCtnr.adjustedMerchandizeTotalPrice;
+    var totalGross = lineItemCtnr.totalGrossPrice;
+    var totalTax = lineItemCtnr.totalTax;
+    var shippingTotal = lineItemCtnr.shippingTotalPrice;
+    var shippingMethod = shipment ? shipment.shippingMethod : null;
+
+    return {
+      checkout: {
+        token: token || "",
+        email: lineItemCtnr.customerEmail || "",
+        phone: lineItemCtnr.billingAddress ? lineItemCtnr.billingAddress.phone || "" : "",
+        currencyCode: lineItemCtnr.currencyCode || "",
+        lineItems: lineItems,
+        billingAddress: getAddressForTracking(lineItemCtnr.billingAddress),
+        shippingAddress: getAddressForTracking(shipment ? shipment.shippingAddress : null),
+        shippingLine: shippingMethod
+          ? {
+              price: {
+                amount: shippingTotal ? shippingTotal.value : 0,
+                currencyCode: shippingTotal ? shippingTotal.currencyCode : "",
+              },
+            }
+          : null,
+        subtotalPrice: {
+          amount: subtotal ? subtotal.value : 0,
+          currencyCode: subtotal ? subtotal.currencyCode : "",
+        },
+        totalPrice: {
+          amount: totalGross ? totalGross.value : 0,
+          currencyCode: totalGross ? totalGross.currencyCode : "",
+        },
+        totalTax: {
+          amount: totalTax ? totalTax.value : 0,
+          currencyCode: totalTax ? totalTax.currencyCode : "",
+        },
+        discountApplications: discountApplications,
+      },
+    };
+  },
+
+  /**
+   * Builds a Shopify-shaped checkout_completed payload from a placed order.
+   * Extends getCheckoutForTracking with order ID and transaction data.
+   *
+   * @param {string} orderId
+   * @param {string} orderToken
+   * @returns {Object|null}
+   */
+  getOrderCheckoutForTracking: function (orderId, orderToken) {
+    if (!orderId) return null;
+
+    var OrderMgr = require("dw/order/OrderMgr");
+    var order = OrderMgr.getOrder(orderId, orderToken);
+    if (!order) return null;
+
+    var result = module.exports.getCheckoutForTracking(order, orderToken);
+    if (!result) return null;
+
+    result.checkout.order = {
+      id: order.orderNo,
+      customer: { id: order.customerNo || "" },
+    };
+
+    var transactions = [];
+    var paymentInstruments = order.getPaymentInstruments();
+    for (var i = 0; i < paymentInstruments.length; i++) {
+      var pi = paymentInstruments[i];
+      var txn = pi.paymentTransaction;
+      transactions.push({
+        amount: {
+          amount: txn ? txn.amount.value : 0,
+          currencyCode: txn ? txn.amount.currencyCode : "",
+        },
+        gateway: pi.paymentMethod || "",
+        paymentMethod: { type: pi.paymentMethod || "" },
+      });
+    }
+    result.checkout.transactions = transactions;
+
+    return result;
+  },
+
   getCartLineForTracking: function (pli) {
     var URLUtils = require("dw/web/URLUtils");
 
@@ -211,6 +329,29 @@ module.exports = {
     };
   },
 };
+
+/**
+ * Maps a SFCC OrderAddress to a Shopify mailingAddress shape.
+ * Shared by getCheckoutForTracking and getOrderCheckoutForTracking.
+ *
+ * @param {dw.order.OrderAddress} address
+ * @returns {Object|null}
+ */
+function getAddressForTracking(address) {
+  if (!address) return null;
+  return {
+    firstName: address.firstName || "",
+    lastName: address.lastName || "",
+    address1: address.address1 || "",
+    address2: address.address2 || "",
+    city: address.city || "",
+    province: address.stateCode || "",
+    provinceCode: address.stateCode || "",
+    countryCode: address.countryCode ? address.countryCode.value || String(address.countryCode) : "",
+    zip: address.postalCode || "",
+    phone: address.phone || "",
+  };
+}
 
 /**
  * Builds a Shopify-shaped productVariant payload from a raw SFCC product.

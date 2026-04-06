@@ -35,14 +35,26 @@ async function monitorEcommerceEvents() {
 
     if (typeof $ === "undefined") return;
 
-    $("body").on("product:afterAddToCart", (event, data) => {
-        const payload = data?.noibu_product_added_to_cart || null;
-        track("product_added_to_cart", payload);
-    });
+    $(document).ajaxComplete((_event, xhr) => {
+        let data;
+        try { data = JSON.parse(xhr.responseText); } catch { return; }
 
-    $("body").on("cart:update", (event, data) => {
-        const payload = data?.noibu_product_removed_from_cart || null;
-        track("product_removed_from_cart", payload);
+        if (data.noibu_product_added_to_cart) {
+            track("product_added_to_cart", data.noibu_product_added_to_cart);
+        }
+        if (data.noibu_product_removed_from_cart) {
+            track("product_removed_from_cart", data.noibu_product_removed_from_cart);
+        }
+        if (data.noibu_checkout_contact_info_submitted) {
+            track("checkout_contact_info_submitted", data.noibu_checkout_contact_info_submitted);
+        }
+        if (data.noibu_checkout_address_info_submitted) {
+            track("checkout_address_info_submitted", data.noibu_checkout_address_info_submitted);
+            track("checkout_shipping_info_submitted", data.noibu_checkout_shipping_info_submitted);
+        }
+        if (data.noibu_payment_info_submitted) {
+            track("payment_info_submitted", data.noibu_payment_info_submitted);
+        }
     });
 }
 
