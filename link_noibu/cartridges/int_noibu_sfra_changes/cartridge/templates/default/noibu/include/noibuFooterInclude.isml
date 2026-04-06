@@ -52,16 +52,15 @@
             <isif condition="${pdict.noibu_search_submitted}">
             events.push(["search_submitted", <isprint value="${JSON.stringify(pdict.noibu_search_submitted)}" encoding="off" />]);
             </isif>
-            function trackAll() {
+            function track() {
                 events.forEach(([name, payload]) => {
                     const result = NOIBUJS.track(name, payload);
-                    console.log('NOIBUJS.track:', name, result, payload);
                 });
             }
             if (window.NOIBUJS) {
-                trackAll();
+                track();
             } else {
-                window.addEventListener("noibuSDKReady", trackAll);
+                window.addEventListener("noibuSDKReady", track);
             }
         })();
     </script>
