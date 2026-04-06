@@ -64,7 +64,6 @@ async function track(eventName, eventData) {
     }
 
     const result = NOIBUJS.track(eventName, eventData);
-    console.log('NOIBUJS track:', eventName, result, eventData);
 }
 
 checkSDKExistanceAndAddCustomAttribute();
