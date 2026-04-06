@@ -157,14 +157,6 @@ module.exports = {
     };
   },
 
-  /**
-   * Builds a Shopify-shaped checkout payload from a SFCC LineItemCtnr
-   * (works for both Basket and Order since they share the same interface).
-   *
-   * @param {dw.order.LineItemCtnr} lineItemCtnr
-   * @param {string} token - basket UUID or order token
-   * @returns {Object|null}
-   */
   getCheckoutForTracking: function (lineItemCtnr, token) {
     var shipment = lineItemCtnr.defaultShipment;
 
@@ -233,14 +225,6 @@ module.exports = {
     };
   },
 
-  /**
-   * Builds a Shopify-shaped checkout_completed payload from a placed order.
-   * Extends getCheckoutForTracking with order ID and transaction data.
-   *
-   * @param {string} orderId
-   * @param {string} orderToken
-   * @returns {Object|null}
-   */
   getOrderCheckoutForTracking: function (orderId, orderToken) {
     if (!orderId) return null;
 
@@ -330,13 +314,6 @@ module.exports = {
   },
 };
 
-/**
- * Maps a SFCC OrderAddress to a Shopify mailingAddress shape.
- * Shared by getCheckoutForTracking and getOrderCheckoutForTracking.
- *
- * @param {dw.order.OrderAddress} address
- * @returns {Object|null}
- */
 function getAddressForTracking(address) {
   if (!address) return null;
   return {
@@ -353,13 +330,6 @@ function getAddressForTracking(address) {
   };
 }
 
-/**
- * Builds a Shopify-shaped productVariant payload from a raw SFCC product.
- * Shared by getProductViewedForTracking and getCollectionViewedForTracking.
- *
- * @param {dw.catalog.Product} product
- * @returns {Object} productVariant payload
- */
 function getProductVariantForTracking(product) {
   var URLUtils = require("dw/web/URLUtils");
 
