@@ -6,24 +6,43 @@
                 return;
             }
 
-            // All available Noibu attributes from pdict
-            var noibuAttributes = {
-                "customer_id": '${pdict.noibuAccountInfo ? pdict.noibuAccountInfo.customer_id : ''}',
-                "customer_groups": '${pdict.noibuAccountInfo ? pdict.noibuAccountInfo.customer_groups : ''}',
-                "order_id": '${pdict.noibuOrder ? pdict.noibuOrder.order_id : ''}',
-                "order_token": '${pdict.noibuOrder ? pdict.noibuOrder.order_token : ''}',
-                "coupon_codes": '${pdict.noibuOrder ? pdict.noibuOrder.coupon_codes : ''}',
-                "promotions": '${pdict.noibuOrder ? pdict.noibuOrder.promotions : ''}',
-                "cart_id": '${pdict.noibuCart ? pdict.noibuCart.cart_id : ''}',
-            };
-
-            // Loop through all attributes and add them dynamically
-            Object.entries(noibuAttributes).forEach(([key, value]) => {
-                if (value && value !== 'null' && value !== 'undefined') {
-                    window.NOIBUJS.addCustomAttribute(key, value);
+            // Forward orderID/orderToken to the endpoint.
+            // On Order-Confirm the params come from the POST body (pdict), not the URL.
+            var urlParams = new URLSearchParams(window.location.search);
+            var endpointUrl = '${URLUtils.url("Noibu-GetAttributes")}';
+            var orderID = urlParams.get('orderID') || '${pdict.noibuOrderParams ? pdict.noibuOrderParams.orderID : ""}';
+            var orderToken = urlParams.get('orderToken') || '${pdict.noibuOrderParams ? pdict.noibuOrderParams.orderToken : ""}';
+            if (orderID) {
+                var separator = endpointUrl.indexOf('?') === -1 ? '?' : '&';
+                endpointUrl += separator + 'orderID=' + encodeURIComponent(orderID);
+                if (orderToken) {
+                    endpointUrl += '&orderToken=' + encodeURIComponent(orderToken);
                 }
-            });
+            }
+
+            fetch(endpointUrl)
+                .then(function (response) { return response.json(); })
+                .then(function (data) {
+                    var attributeMap = {
+                        customer_id: data.noibuAccountInfo && data.noibuAccountInfo.customer_id,
+                        customer_groups: data.noibuAccountInfo && data.noibuAccountInfo.customer_groups,
+                        cart_id: data.noibuCart && data.noibuCart.cart_id,
+                        order_id: data.noibuOrder && data.noibuOrder.order_id,
+                        order_token: data.noibuOrder && data.noibuOrder.order_token,
+                        coupon_codes: data.noibuOrder && data.noibuOrder.coupon_codes,
+                        promotions: data.noibuOrder && data.noibuOrder.promotions,
+                        'sfcc-session-id': data.dwsid
+                    };
+                    Object.entries(attributeMap).forEach(function (entry) {
+                        var key = entry[0];
+                        var value = entry[1];
+                        if (value && value !== 'null' && value !== 'undefined') {
+                            window.NOIBUJS.addCustomAttribute(key, value);
+                        }
+                    });
+                });
         }
+
         if (window.NOIBUJS) {
             addNoibuAttributes();
         } else {
