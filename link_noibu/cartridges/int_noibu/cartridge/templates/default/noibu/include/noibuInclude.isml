@@ -1,5 +1,5 @@
 <isset name="sitePreferences" value="${require('dw/system/Site').getCurrent().getPreferences().getCustom()}" scope="page" />
 <isif condition="${'noibuEnabled' in sitePreferences && sitePreferences.noibuEnabled}">
     <script src="https://cdn.noibu.com/collect-core.js"></script>
-    <script src="${URLUtils.staticURL('/js/noibu.js')}" data-noibu-session-id="${pdict.dwsid}"></script>
+    <script src="${URLUtils.staticURL('/js/noibu.js')}"></script>
 </isif>

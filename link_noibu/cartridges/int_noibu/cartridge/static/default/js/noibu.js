@@ -2,74 +2,101 @@
 /******/ 	"use strict";
 
 
-/**
- * Checks if the NOIBUJS SDK is loaded and adds a custom attribute to the SDK.
- *
- * This function ensures that the NOIBUJS SDK is available before attempting
- * to add a custom attribute. It listens for the `noibuSDKReady` event if the SDK
- * is not yet loaded. Once the SDK is ready, it checks for an SFCC session ID
- * (`dwsid`) in the page's meta tags and adds it as a custom attribute to the SDK.
- *
- * The function also logs relevant SDK readiness information to the console for debugging.
- *
- * @async
- * @function checkSDKExistanceAndAddCustomAttribute
- * @returns {Promise<void>} Resolves when the NOIBUJS SDK is ready and the custom attribute is added.
- */
-async function checkSDKExistanceAndAddCustomAttribute() {
-    const script = document.querySelector('script[data-noibu-session-id]');
-    const dwsid = script ? script.getAttribute('data-noibu-session-id') : undefined;
-    if (!window.NOIBUJS && dwsid && dwsid.length > 0) {
-        await new Promise((resolve) => {
-            window.addEventListener("noibuSDKReady", resolve);
+window.noibuSFCC = (() => {
+    // Public: called by noibuFooterInclude.isml with server-rendered config
+    const init = (config) => {
+        const run = () => fetchPageVisitData(config);
+        if (window.NOIBUJS) {
+            run();
+        } else {
+            window.addEventListener("noibuSDKReady", run);
+        }
+    };
+
+    const track = (eventName, eventData) => NOIBUJS.track(eventName, eventData);
+
+    // Fetch session-specific data from the uncached endpoint
+    const fetchPageVisitData = (config) => {
+        const pageUrlParams = new URLSearchParams(window.location.search);
+        const orderId = config.orderId || pageUrlParams.get('orderID');
+        const orderToken = config.orderToken || pageUrlParams.get('orderToken');
+
+        const url = new URL(config.attributesUrl, window.location.origin);
+
+        if (orderId) {
+            url.searchParams.set('orderID', orderId);
+            if (orderToken) url.searchParams.set('orderToken', orderToken);
+        }
+
+        if (config.pageType) {
+            url.searchParams.set('page', config.pageType);
+            if (config.pageId) url.searchParams.set('pageId', config.pageId);
+        }
+
+        fetch(url)
+            .then((response) => response.json())
+            .then((data) => {
+                addCustomAttributes(data);
+                trackPageEvents(data);
+            });
+    };
+
+    const trackPageEvents = (data) => {
+        if (data.noibu_cart_viewed) track('cart_viewed', data.noibu_cart_viewed);
+        if (data.noibu_checkout_started) track('checkout_started', data.noibu_checkout_started);
+        if (data.noibu_checkout_completed) track('checkout_completed', data.noibu_checkout_completed);
+        if (data.noibu_product_viewed) track('product_viewed', data.noibu_product_viewed);
+        if (data.noibu_collection_viewed) track('collection_viewed', data.noibu_collection_viewed);
+        if (data.noibu_search_submitted) track('search_submitted', data.noibu_search_submitted);
+    };
+
+    const addCustomAttributes = (data) => {
+        const attributes = {
+            customer_id: data.noibuAccountInfo?.customer_id,
+            customer_groups: data.noibuAccountInfo?.customer_groups,
+            cart_id: data.noibuCart?.cart_id,
+            order_id: data.noibuOrder?.order_id,
+            order_token: data.noibuOrder?.order_token,
+            coupon_codes: data.noibuOrder?.coupon_codes,
+            promotions: data.noibuOrder?.promotions,
+            'sfcc-session-id': data.dwsid
+        };
+        Object.entries(attributes).forEach(([key, value]) => {
+            if (value) window.NOIBUJS.addCustomAttribute(key, value);
         });
-    }
+    };
 
-    if (dwsid && dwsid.length > 0) {
-        window.NOIBUJS.addCustomAttribute("sfcc-session-id", dwsid);
-    }
-}
+    // Monitor AJAX responses for cart/checkout step events
+    const setupAjaxListeners = () => {
+        if (typeof $ === "undefined") return;
 
-async function monitorEcommerceEvents() {
+        $(document).ajaxComplete((event, xhr) => {
+            let data;
+            try { data = JSON.parse(xhr.responseText); } catch { return; }
+
+            if (data.noibu_product_added_to_cart) track("product_added_to_cart", data.noibu_product_added_to_cart);
+            if (data.noibu_product_removed_from_cart) track("product_removed_from_cart", data.noibu_product_removed_from_cart);
+            if (data.noibu_payment_info_submitted) track("payment_info_submitted", data.noibu_payment_info_submitted);
+            if (data.noibu_checkout_contact_info_submitted) track("checkout_contact_info_submitted", data.noibu_checkout_contact_info_submitted);
+            if (data.noibu_checkout_address_info_submitted) {
+                track("checkout_address_info_submitted", data.noibu_checkout_address_info_submitted);
+                track("checkout_shipping_info_submitted", data.noibu_checkout_shipping_info_submitted);
+            }
+        });
+    };
+
+    // Bootstrap
     localStorage.setItem('n_platform', '1'); // disable funnel step ecomm events
 
-    await new Promise(resolve => document.addEventListener("DOMContentLoaded", resolve));
-
-    if (typeof $ === "undefined") return;
-
-    $(document).ajaxComplete((_event, xhr) => {
-        let data;
-        try { data = JSON.parse(xhr.responseText); } catch { return; }
-
-        if (data.noibu_product_added_to_cart) {
-            track("product_added_to_cart", data.noibu_product_added_to_cart);
-        }
-        if (data.noibu_product_removed_from_cart) {
-            track("product_removed_from_cart", data.noibu_product_removed_from_cart);
-        }
-        if (data.noibu_checkout_contact_info_submitted) {
-            track("checkout_contact_info_submitted", data.noibu_checkout_contact_info_submitted);
-        }
-        if (data.noibu_checkout_address_info_submitted) {
-            track("checkout_address_info_submitted", data.noibu_checkout_address_info_submitted);
-            track("checkout_shipping_info_submitted", data.noibu_checkout_shipping_info_submitted);
-        }
-        if (data.noibu_payment_info_submitted) {
-            track("payment_info_submitted", data.noibu_payment_info_submitted);
-        }
-    });
-}
-
-async function track(eventName, eventData) {
-    if (!window.NOIBUJS) {
-        await new Promise(resolve => window.addEventListener("noibuSDKReady", resolve));
+    // Defer until DOMContentLoaded so jQuery is guaranteed to be available
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupAjaxListeners);
+    } else {
+        setupAjaxListeners();
     }
 
-    const result = NOIBUJS.track(eventName, eventData);
-}
-
-checkSDKExistanceAndAddCustomAttribute();
-monitorEcommerceEvents();
+    return { init };
+})();
 
 /******/ })()
 ;
