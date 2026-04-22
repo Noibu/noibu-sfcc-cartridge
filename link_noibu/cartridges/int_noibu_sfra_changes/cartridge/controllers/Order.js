@@ -1,10 +1,11 @@
 "use strict";
 
 var server = require("server");
+var safe = require("*/cartridge/scripts/helpers/safe");
 server.extend(module.superModule);
 
 server.append("Confirm", function (req, res, next) {
-    try {
+    safe(() => {
         var orderId = req.form.orderID || req.querystring.orderID;
         var orderToken = req.form.orderToken || req.querystring.orderToken;
 
@@ -16,10 +17,7 @@ server.append("Confirm", function (req, res, next) {
                 }
             });
         }
-    } catch (error) { // eslint-disable-line no-unused-vars
-        // skip to next
-    }
-
+    });
     next();
 });
 
