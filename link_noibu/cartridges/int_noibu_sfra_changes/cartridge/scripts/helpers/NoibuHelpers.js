@@ -166,9 +166,11 @@ module.exports = {
       var cartLine = module.exports.getCartLineForTracking(productLineItems[i]);
       if (!cartLine) continue;
       lineItems.push({
+        id: cartLine.cartLine.merchandise.product.id,
         quantity: cartLine.cartLine.quantity,
         finalLinePrice: cartLine.cartLine.cost.totalAmount,
-        merchandise: cartLine.cartLine.merchandise,
+        title: cartLine.cartLine.merchandise.product.title,
+        variant: cartLine.cartLine.merchandise,
       });
     }
 
