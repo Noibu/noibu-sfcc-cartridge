@@ -196,12 +196,8 @@ module.exports = {
     return {
       checkout: {
         token: token || "",
-        email: lineItemCtnr.customerEmail || "",
-        phone: lineItemCtnr.billingAddress ? lineItemCtnr.billingAddress.phone || "" : "",
         currencyCode: lineItemCtnr.currencyCode || "",
         lineItems: lineItems,
-        billingAddress: getAddressForTracking(lineItemCtnr.billingAddress),
-        shippingAddress: getAddressForTracking(shipment ? shipment.shippingAddress : null),
         shippingLine: shippingMethod
           ? {
               price: {
@@ -315,22 +311,6 @@ module.exports = {
     };
   },
 };
-
-function getAddressForTracking(address) {
-  if (!address) return null;
-  return {
-    firstName: address.firstName || "",
-    lastName: address.lastName || "",
-    address1: address.address1 || "",
-    address2: address.address2 || "",
-    city: address.city || "",
-    province: address.stateCode || "",
-    provinceCode: address.stateCode || "",
-    countryCode: address.countryCode ? address.countryCode.value || String(address.countryCode) : "",
-    zip: address.postalCode || "",
-    phone: address.phone || "",
-  };
-}
 
 function getProductVariantForTracking(product) {
   var URLUtils = require("dw/web/URLUtils");
