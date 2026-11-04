@@ -52,13 +52,13 @@ window.noibuSFCC = (() => {
 
     const addCustomAttributes = (data) => {
         const attributes = {
-            customer_id: data.noibuAccountInfo?.customer_id,
-            customer_groups: data.noibuAccountInfo?.customer_groups,
-            cart_id: data.noibuCart?.cart_id,
-            order_id: data.noibuOrder?.order_id,
-            order_token: data.noibuOrder?.order_token,
-            coupon_codes: data.noibuOrder?.coupon_codes,
-            promotions: data.noibuOrder?.promotions,
+            customer_id: data.noibuAccountInfo && data.noibuAccountInfo.customer_id,
+            customer_groups: data.noibuAccountInfo && data.noibuAccountInfo.customer_groups,
+            cart_id: data.noibuCart && data.noibuCart.cart_id,
+            order_id: data.noibuOrder && data.noibuOrder.order_id,
+            order_token: data.noibuOrder && data.noibuOrder.order_token,
+            coupon_codes: data.noibuOrder && data.noibuOrder.coupon_codes,
+            promotions: data.noibuOrder && data.noibuOrder.promotions,
             'sfcc-session-id': data.dwsid
         };
         Object.entries(attributes).forEach(([key, value]) => {
@@ -72,7 +72,7 @@ window.noibuSFCC = (() => {
 
         $(document).ajaxComplete((event, xhr) => {
             let data;
-            try { data = JSON.parse(xhr.responseText); } catch { return; }
+            try { data = JSON.parse(xhr.responseText); } catch (e) { return; }
 
             if (data.noibu_product_added_to_cart) track("product_added_to_cart", data.noibu_product_added_to_cart);
             if (data.noibu_product_removed_from_cart) track("product_removed_from_cart", data.noibu_product_removed_from_cart);
